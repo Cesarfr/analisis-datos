@@ -1,7 +1,8 @@
 
-library(shiny)
-library(shinyBS)
-library(shinyjs)
+  library(shiny)
+  library(shinyBS)
+  library(shinyjs)
+  #library(modeest)
 
 
 shinyUI(fluidPage(
@@ -10,7 +11,7 @@ shinyUI(fluidPage(
     # Titulo de la aplicacion
     headerPanel("Análisis estadístico de datos"),
     
-    fluidRow(
+    fluidRow(id="cargar",
       column(
         4, wellPanel(
           selectInput("tDatos", "Elige como ingresar datos:", choices = c("-- Elige una opcion --","CSV", "Manual")),
@@ -20,5 +21,10 @@ shinyUI(fluidPage(
       column(
         8, uiOutput("cargaDatos")
       )
-    )
+    ),
+    tabsetPanel(
+      tabPanel("Tabla", h2("Tabla de los datos"), tableOutput("tablaDatos")),
+      tabPanel("Gráfica", plotOutput("distPlot")),
+      tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst"))
+      )
 ))

@@ -10,10 +10,13 @@
 library(shiny)
 library(shinyBS)
 library(shinyjs)
+library(modeest)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
-   
+   inFile <- NULL
+   datoscsv <- NULL
+   cn <- NULL
   output$cargaDatos <- renderUI({
     
     if(input$sel){
@@ -25,7 +28,7 @@ shinyServer(function(input, output, session) {
       
       switch (input$tDatos,
         'CSV' = wellPanel(
-          fileInput('file1', 'Selecciona un archivo CSV:',
+          fileInput('valores', 'Selecciona un archivo CSV:',
                     accept=c('text/csv', 
                              'text/comma-separated-values,text/plain', 
                              '.csv')),
@@ -40,15 +43,68 @@ shinyServer(function(input, output, session) {
                        c(Ninguna='',
                          'Comilla doble'='"',
                          'Comilla simple'="'"),
-                       '"'),
-          bsButton(inputId = "subcsv", label = "Enviar", type = "toggle", style = "info")
+                       '"')
         ),
         'Manual' = mainPanel(
-          h1("Manual")
+          wellPanel(
+            tags$label("Ingresa los datos separados por comas", name="valores"),
+            tags$hr(),
+            tags$textarea(id = "valores", name="valores", cols = 50, rows = 10),
+            bsButton(inputId = "subcsv", label = "Enviar", style = "info", type = "submit")
+          )
         )
       )
-      
     }
     
   })
+  
+  # Tabla de datos
+  output$tablaDatos <- renderTable({
+    inFile <<- input$valores
+    
+    if (is.null(inFile)){
+      return(NULL)
+    }else{
+      observeEvent(input$valores, ({
+        shinyjs::hide("cargar", anim = TRUE)
+      }))
+      datoscsv <<- read.csv(inFile$datapath, header=input$header, sep=input$sep, 
+               quote=input$quote)
+    }
+  })
+  
+  # Grafico
+  output$distPlot <- renderPlot({
+    if (is.null(inFile)){
+      return(NULL)
+    }else{
+      cn <<- names(datoscsv)
+      hist(as.double(datoscsv[,1]), xlab = cn[1], ylab = "Frecuencia", main = paste("Histograma de", cn[1]), col = '#f59233', border = 'white')
+    }
+  })
+  
+  # Calculos estadisticos
+  output$calcEst <- renderUI({
+    fluidRow(
+      column(
+        4, tags$div(class="panel panel-primary",
+                    tags$div(class="panel-heading", tags$h3(class="panel-title"), "Media"),
+                    tags$div(class="panel-body", mean(datoscsv[,1]))
+        )
+      ),
+      column(
+        4, tags$div(class="panel panel-primary",
+                    tags$div(class="panel-heading", tags$h3(class="panel-title"), "Moda"),
+                    tags$div(class="panel-body", mlv(datoscsv[,1])[1])
+        )
+      ),
+      column(
+        4, tags$div(class="panel panel-primary",
+                    tags$div(class="panel-heading", tags$h3(class="panel-title"), "Mediana"),
+                    tags$div(class="panel-body", median(datoscsv[,1]))
+        )
+      )
+    )
+  })
+  
 })
