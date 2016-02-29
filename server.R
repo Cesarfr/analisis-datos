@@ -85,26 +85,71 @@ shinyServer(function(input, output, session) {
   
   # Calculos estadisticos
   output$calcEst <- renderUI({
-    fluidRow(
-      column(
-        4, tags$div(class="panel panel-primary",
-                    tags$div(class="panel-heading", tags$h3(class="panel-title"), "Media"),
-                    tags$div(class="panel-body", mean(datoscsv[,1]))
+    wellPanel(
+      fluidRow(
+        column(
+          4, tags$div(class="panel panel-primary",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Media"),
+                      tags$div(class="panel-body", mean(datoscsv[,1]))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-primary",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Mediana"),
+                      tags$div(class="panel-body", median(datoscsv[,1]))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-primary",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Moda"),
+                      tags$div(class="panel-body", mlv(datoscsv[,1])[1])
+          )
         )
       ),
-      column(
-        4, tags$div(class="panel panel-primary",
-                    tags$div(class="panel-heading", tags$h3(class="panel-title"), "Moda"),
-                    tags$div(class="panel-body", mlv(datoscsv[,1])[1])
+      
+      fluidRow(
+        column(
+          4, tags$div(class="panel panel-info",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 1"),
+                      tags$div(class="panel-body", quantile(datoscsv[,1], .25))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-info",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 2"),
+                      tags$div(class="panel-body", quantile(datoscsv[,1], .50))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-info",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 3"),
+                      tags$div(class="panel-body", median(datoscsv[,1], .75))
+          )
         )
       ),
-      column(
-        4, tags$div(class="panel panel-primary",
-                    tags$div(class="panel-heading", tags$h3(class="panel-title"), "Mediana"),
-                    tags$div(class="panel-body", median(datoscsv[,1]))
+      
+      fluidRow(
+        column(
+          4, tags$div(class="panel panel-success",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 10"),
+                      tags$div(class="panel-body", quantile(datoscsv[,1], .10))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-success",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 50"),
+                      tags$div(class="panel-body", quantile(datoscsv[,1], 0.50))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-success",
+                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 90"),
+                      tags$div(class="panel-body", median(datoscsv[,1], .90))
+          )
         )
       )
     )
+    
   })
   
 })
