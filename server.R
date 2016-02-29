@@ -17,15 +17,19 @@ shinyServer(function(input, output, session) {
    inFile <- NULL
    datoscsv <- NULL
    cn <- NULL
+   
   output$cargaDatos <- renderUI({
     
     if(input$sel){
-      
       observeEvent(input$sel, ({
-        updateButton(session, "sel", disabled = TRUE)
-        shinyjs::disable("tDatos")
+        if(input$tDatos == "-- Elige una opcion --"){
+          updateButton(session, "sel", disabled = FALSE)
+          shinyjs::enable("tDatos")
+        }else{
+          updateButton(session, "sel", disabled = TRUE)
+          shinyjs::disable("tDatos")
+        }
       }))
-      
       switch (input$tDatos,
         'CSV' = wellPanel(
           fileInput('valores', 'Selecciona un archivo CSV:',
@@ -45,14 +49,14 @@ shinyServer(function(input, output, session) {
                          'Comilla simple'="'"),
                        '"')
         ),
-        'Manual' = mainPanel(
-          wellPanel(
+        'Manual' = wellPanel(
             tags$label("Ingresa los datos separados por comas", name="valores"),
             tags$hr(),
             tags$textarea(id = "valores", name="valores", cols = 50, rows = 10),
             bsButton(inputId = "subcsv", label = "Enviar", style = "info", type = "submit")
-          )
-        )
+        ),
+        '-- Elige una opcion --' = createAlert(session, "alert", "alErr", title = "Error",
+                                               content = "Escoge una opción para cargar los datos", append = TRUE)
       )
     }
     

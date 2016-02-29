@@ -19,7 +19,7 @@ shinyUI(fluidPage(
         )
       ),
       column(
-        8, uiOutput("cargaDatos")
+        8, uiOutput("cargaDatos"), bsAlert("alert")
       )
     ),
     tabsetPanel(
