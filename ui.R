@@ -25,6 +25,7 @@ shinyUI(fluidPage(
     tabsetPanel(
       tabPanel("Tabla", h2("Tabla de los datos"), tableOutput("tablaDatos")),
       tabPanel("Gráfica", plotOutput("distPlot")),
-      tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst"))
+      tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst")),
+      tabPanel("Debug", h2("Debug"), textOutput("debug"))
       )
 ))

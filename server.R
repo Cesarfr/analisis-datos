@@ -32,7 +32,7 @@ shinyServer(function(input, output, session) {
       }))
       switch (input$tDatos,
         'CSV' = wellPanel(
-          fileInput('valores', 'Selecciona un archivo CSV:',
+          fileInput('valorescsv', 'Selecciona un archivo CSV:',
                     accept=c('text/csv', 
                              'text/comma-separated-values,text/plain', 
                              '.csv')),
@@ -52,8 +52,8 @@ shinyServer(function(input, output, session) {
         'Manual' = wellPanel(
             tags$label("Ingresa los datos separados por comas", name="valores"),
             tags$hr(),
-            tags$textarea(id = "valores", name="valores", cols = 50, rows = 10),
-            bsButton(inputId = "subcsv", label = "Enviar", style = "info", type = "submit")
+            tags$textarea(id = "valtxt", name="valtxt", cols = 50, rows = 10),
+            bsButton(inputId = "subman", label = "Enviar", style = "info", type = "submit")
         ),
         '-- Elige una opcion --' = createAlert(session, "alert", "alErr", title = "Error",
                                                content = "Escoge una opción para cargar los datos", append = TRUE)
@@ -62,18 +62,34 @@ shinyServer(function(input, output, session) {
     
   })
   
+  # Debug
+  output$debug <- renderText({
+    print(inFile)
+  })
+  
+  
   # Tabla de datos
   output$tablaDatos <- renderTable({
-    inFile <<- input$valores
-    
-    if (is.null(inFile)){
-      return(NULL)
+    if(input$tDatos == "Manual" && input$subman == TRUE){
+      inFile <<- data.frame(strsplit(input$valtxt, ','))
+      if (is.null(inFile)){
+        return(NULL)
+      }else{
+        table(inFile)
+        datoscsv <<- inFile
+      }
     }else{
-      observeEvent(input$valores, ({
-        shinyjs::hide("cargar", anim = TRUE)
-      }))
-      datoscsv <<- read.csv(inFile$datapath, header=input$header, sep=input$sep, 
-               quote=input$quote)
+      inFile <<- input$valorescsv
+      
+      if (is.null(inFile)){
+        return(NULL)
+      }else{
+        observeEvent(input$valores, ({
+          shinyjs::hide("cargar", anim = TRUE)
+        }))
+        datoscsv <<- read.csv(inFile$datapath, header=input$header, sep=input$sep, 
+                              quote=input$quote)
+      }
     }
   })
   
@@ -87,6 +103,8 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  
+  
   # Calculos estadisticos
   output$calcEst <- renderUI({
     wellPanel(
@@ -94,19 +112,19 @@ shinyServer(function(input, output, session) {
         column(
           4, tags$div(class="panel panel-primary",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Media"),
-                      tags$div(class="panel-body", mean(datoscsv[,1]))
+                      tags$div(class="panel-body", mean(as.double(datoscsv[,1])))
           )
         ),
         column(
           4, tags$div(class="panel panel-primary",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Mediana"),
-                      tags$div(class="panel-body", median(datoscsv[,1]))
+                      tags$div(class="panel-body", median(as.double(datoscsv[,1])))
           )
         ),
         column(
           4, tags$div(class="panel panel-primary",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Moda"),
-                      tags$div(class="panel-body", mlv(datoscsv[,1])[1])
+                      tags$div(class="panel-body", mlv(as.double(datoscsv[,1]))[1])
           )
         )
       ),
@@ -115,19 +133,19 @@ shinyServer(function(input, output, session) {
         column(
           4, tags$div(class="panel panel-info",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 1"),
-                      tags$div(class="panel-body", quantile(datoscsv[,1], .25))
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .25))
           )
         ),
         column(
           4, tags$div(class="panel panel-info",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 2"),
-                      tags$div(class="panel-body", quantile(datoscsv[,1], .50))
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .50))
           )
         ),
         column(
           4, tags$div(class="panel panel-info",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 3"),
-                      tags$div(class="panel-body", median(datoscsv[,1], .75))
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .75))
           )
         )
       ),
@@ -136,19 +154,19 @@ shinyServer(function(input, output, session) {
         column(
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 10"),
-                      tags$div(class="panel-body", quantile(datoscsv[,1], .10))
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .10))
           )
         ),
         column(
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 50"),
-                      tags$div(class="panel-body", quantile(datoscsv[,1], 0.50))
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), 0.50))
           )
         ),
         column(
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 90"),
-                      tags$div(class="panel-body", median(datoscsv[,1], .90))
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .90))
           )
         )
       )
