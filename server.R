@@ -64,27 +64,41 @@ shinyServer(function(input, output, session) {
   
   # Debug
   output$debug <- renderText({
-    print(inFile)
+    paste(datoscsv)
   })
   
   
   # Tabla de datos
   output$tablaDatos <- renderTable({
+    
+    validate(
+      need(input$valtxt != "", "")
+    )
+    
     if(input$tDatos == "Manual" && input$subman == TRUE){
-      inFile <<- data.frame(strsplit(input$valtxt, ','))
+      inFile <<- input$valtxt
       if (is.null(inFile)){
         return(NULL)
       }else{
-        table(inFile)
-        datoscsv <<- inFile
+        observeEvent(input$valtxt, ({
+          shinyjs::hide("cargar", anim = TRUE)
+        }))
+        tmp <- strsplit(inFile, split=",")
+        inputValues <- as.numeric(unlist(tmp))
+        inputValues[is.na(inputValues)] <- 0
+        datoscsv <<- data.frame(inputValues)
+        table(datoscsv)
       }
     }else{
+      validate(
+        need(input$valorescsv != "", "Selecciona datos")
+      )
       inFile <<- input$valorescsv
       
       if (is.null(inFile)){
         return(NULL)
       }else{
-        observeEvent(input$valores, ({
+        observeEvent(input$valorescsv, ({
           shinyjs::hide("cargar", anim = TRUE)
         }))
         datoscsv <<- read.csv(inFile$datapath, header=input$header, sep=input$sep, 
@@ -110,63 +124,76 @@ shinyServer(function(input, output, session) {
     wellPanel(
       fluidRow(
         column(
+          12, h3("Medidas de tendencia central")
+        )
+      ),
+      fluidRow(
+        column(
           4, tags$div(class="panel panel-primary",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Media"),
-                      tags$div(class="panel-body", mean(as.double(datoscsv[,1])))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Media"),
+                      tags$div(class="panel-body", mean(as.double(datoscsv[,1])), na.rm = FALSE)
           )
         ),
         column(
           4, tags$div(class="panel panel-primary",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Mediana"),
-                      tags$div(class="panel-body", median(as.double(datoscsv[,1])))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Mediana"),
+                      tags$div(class="panel-body", median(as.double(datoscsv[,1])), na.rm = FALSE)
           )
         ),
         column(
           4, tags$div(class="panel panel-primary",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Moda"),
-                      tags$div(class="panel-body", mlv(as.double(datoscsv[,1]))[1])
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Moda"),
+                      tags$div(class="panel-body", mlv(as.double(datoscsv[,1]), na.rm = FALSE)[1])
           )
         )
       ),
-      
+      fluidRow(
+        column(
+          12, h3("Cuatriles")
+        )
+      ),
       fluidRow(
         column(
           4, tags$div(class="panel panel-info",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 1"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .25))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Cuartil 1"),
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .25), na.rm = FALSE)
           )
         ),
         column(
           4, tags$div(class="panel panel-info",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 2"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .50))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Cuartil 2"),
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .50), na.rm = FALSE)
           )
         ),
         column(
           4, tags$div(class="panel panel-info",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Cuartil 3"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .75))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Cuartil 3"),
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .75), na.rm = FALSE)
           )
         )
       ),
-      
+      fluidRow(
+        column(
+          12, h3("Percentiles")
+        )
+      ),
       fluidRow(
         column(
           4, tags$div(class="panel panel-success",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 10"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .10))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 10"),
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .10), na.rm = FALSE)
           )
         ),
         column(
           4, tags$div(class="panel panel-success",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 50"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), 0.50))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 50"),
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), 0.50), na.rm = FALSE)
           )
         ),
         column(
           4, tags$div(class="panel panel-success",
-                      tags$div(class="panel-heading", tags$h3(class="panel-title"), "Percentil 90"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .90))
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 90"),
+                      tags$div(class="panel-body", quantile(as.double(datoscsv[,1]), .90), na.rm = FALSE)
           )
         )
       )
