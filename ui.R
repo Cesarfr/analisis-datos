@@ -2,7 +2,7 @@
   library(shiny)
   library(shinyBS)
   library(shinyjs)
-  #library(modeest)
+  library(DT)
 
 
 shinyUI(fluidPage(
@@ -11,6 +11,7 @@ shinyUI(fluidPage(
     # Titulo de la aplicacion
     headerPanel("Análisis estadístico de datos"),
     
+    # Area para la carga de datos
     fluidRow(id="cargar",
       column(
         4, wellPanel(
@@ -22,8 +23,9 @@ shinyUI(fluidPage(
         8, uiOutput("cargaDatos"), bsAlert("alert")
       )
     ),
+    # Paneles del area de trabajo
     tabsetPanel(
-      tabPanel("Tabla", h2("Tabla de los datos"), tableOutput("tablaDatos")),
+      tabPanel("Tabla", h2("Tabla de los datos"), DT::dataTableOutput("tablaDatos")),
       tabPanel("Gráfica", uiOutput("choicePlot")),
       tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst")),
       tabPanel("Debug", h2("Debug"), textOutput("debug"))

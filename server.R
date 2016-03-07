@@ -11,6 +11,8 @@ library(shiny)
 library(shinyBS)
 library(shinyjs)
 library(modeest)
+library(DT)
+library(ggplot2)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
@@ -65,12 +67,12 @@ shinyServer(function(input, output, session) {
   
   # Debug
   output$debug <- renderText({
-    paste(input$selPlot)
+    paste(input$optMtc)
   })
   
   
   # Tabla de datos
-  output$tablaDatos <- renderTable({
+  output$tablaDatos <- DT::renderDataTable(DT::datatable({
     
     if(input$tDatos == "Manual" && input$subman == TRUE){
       inFile <<- input$valtxt
@@ -99,31 +101,70 @@ shinyServer(function(input, output, session) {
                               quote=input$quote)
       }
     }
-  })
+  }), class = "cell-border stripe", extensions = "Responsive")
   
-  # Grafico
+  # UI para el grafico
   output$choicePlot <- renderUI({
       cn <<- names(datoscsv)
-      wellPanel(
-        fluidRow(
-          column(
-            3, h3("Grafico"),
-            selectInput(inputId = "selPlot", label = "Selecciona los datos a graficar", choices = cn)
-          ),
-          column(
-            8, h3("Otrtsad"),
-            plotOutput("graf")
+      sidebarLayout(
+        sidebarPanel(
+          selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn),
+          tags$label("Nomenclatura"),
+          tags$ul(class="list-unstyled ",
+            tags$li("Media", style = "color:red;"),
+            tags$li("Mediana", style = "color:blue;"),
+            tags$li("Moda", style = "color:green;")
           )
+        ),
+        mainPanel(
+          h3("Gráfico"),
+          plotOutput("graf")
         )
       )
   })
   
+  # Grafico
   output$graf <- renderPlot({
     grf <<- input$selPlot
     hist(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
          col = '#f59233', border = 'white')
+    re()
   })
   
+  # Cambio de valores segun lo elegido en el grafico
+  re <- eventReactive(input$selPlot, ({
+    output$media <- renderText({
+      round(mean(as.double(datoscsv[[grf]])), digits = 2)
+    })
+    output$mediana <- renderText({
+      round(median(as.double(datoscsv[[grf]])), digits = 2)
+    })
+    output$moda <- renderText({
+      round(as.numeric(mlv(as.double(datoscsv[[grf]]))[1]), digits = 2)
+    })
+    output$q1 <- renderText({
+      round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
+    })
+    output$q2 <- renderText({
+      round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+    })
+    output$q3 <- renderText({
+      round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
+    })
+    output$p10 <- renderText({
+      round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
+    })
+    output$p50 <- renderText({
+      round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+    })
+    output$p90 <- renderText({
+      round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
+    })
+    
+    abline(v = mean(as.double(datoscsv[[grf]])), col = "red")
+    abline(v = median(as.double(datoscsv[[grf]])), col = "blue")
+    abline(v = mlv(as.double(datoscsv[[grf]]))[1], col = "green")
+  }))
   
   # Calculos estadisticos
   output$calcEst <- renderUI({
@@ -137,44 +178,44 @@ shinyServer(function(input, output, session) {
         column(
           4, tags$div(class="panel panel-primary",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Media"),
-                      tags$div(class="panel-body", round(mean(as.double(datoscsv[[grf]])), digits = 2))
+                      tags$div(class="panel-body", textOutput("media"))
           )
         ),
         column(
           4, tags$div(class="panel panel-primary",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Mediana"),
-                      tags$div(class="panel-body", median(as.double(datoscsv[[grf]])))
+                      tags$div(class="panel-body", textOutput("mediana"))
           )
         ),
         column(
           4, tags$div(class="panel panel-primary",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Moda"),
-                      tags$div(class="panel-body", mlv(as.double(datoscsv[[grf]]))[1])
+                      tags$div(class="panel-body", textOutput("moda"))
           )
         )
       ),
       fluidRow(
         column(
-          12, h3("Cuatriles")
+          12, h3("Cuartiles")
         )
       ),
       fluidRow(
         column(
           4, tags$div(class="panel panel-info",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Cuartil 1"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[[grf]]), .25))
+                      tags$div(class="panel-body", textOutput("q1"))
           )
         ),
         column(
           4, tags$div(class="panel panel-info",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Cuartil 2"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[[grf]]), .50))
+                      tags$div(class="panel-body", textOutput("q2"))
           )
         ),
         column(
           4, tags$div(class="panel panel-info",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Cuartil 3"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[[grf]]), .75))
+                      tags$div(class="panel-body", textOutput("q3"))
           )
         )
       ),
@@ -187,19 +228,19 @@ shinyServer(function(input, output, session) {
         column(
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 10"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[[grf]]), .10))
+                      tags$div(class="panel-body", textOutput("p10"))
           )
         ),
         column(
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 50"),
-                      tags$div(class="panel-body", quantile(as.double(datoscsv[[grf]]), 0.50))
+                      tags$div(class="panel-body", textOutput("p50"))
           )
         ),
         column(
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 90"),
-                      tags$div(class="panel-body", round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2))
+                      tags$div(class="panel-body", textOutput("p90"))
           )
         )
       )
