@@ -1,11 +1,3 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(shinyBS)
@@ -108,13 +100,7 @@ shinyServer(function(input, output, session) {
       cn <<- names(datoscsv)
       sidebarLayout(
         sidebarPanel(
-          selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn),
-          tags$label("Nomenclatura"),
-          tags$ul(class="list-unstyled ",
-            tags$li("Media", style = "color:red;"),
-            tags$li("Mediana", style = "color:blue;"),
-            tags$li("Moda", style = "color:green;")
-          )
+          selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
         ),
         mainPanel(
           h3("Gráfico"),
@@ -164,6 +150,7 @@ shinyServer(function(input, output, session) {
     abline(v = mean(as.double(datoscsv[[grf]])), col = "red")
     abline(v = median(as.double(datoscsv[[grf]])), col = "blue")
     abline(v = mlv(as.double(datoscsv[[grf]]))[1], col = "green")
+    legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "blue", "green"), lwd = c(2, 2, 2), bty = "n")
   }))
   
   # Calculos estadisticos
