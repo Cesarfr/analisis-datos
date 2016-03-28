@@ -15,7 +15,7 @@ shinyUI(fluidPage(
     fluidRow(id="cargar",
       column(
         4, wellPanel(
-          selectInput("tDatos", "Elige como ingresar datos:", choices = c("-- Elige una opcion --","CSV", "Manual")),
+          selectInput("tDatos", "Elige como ingresar datos:", choices = c("-- Elige una opcion --","CSV", "Manual", "Base de datos")),
           bsButton(inputId="sel", label = "Seleccionar", style = "success")
         )
       ),
@@ -25,7 +25,7 @@ shinyUI(fluidPage(
     ),
     # Paneles del area de trabajo
     tabsetPanel(
-      tabPanel("Tabla", h2("Tabla de los datos"), DT::dataTableOutput("tablaDatos")),
+      tabPanel("Tabla", h2("Tabla de los datos"), uiOutput("choiceTableBD"), DT::dataTableOutput("tablaDatos")),
       tabPanel("Gráfica", uiOutput("choicePlot")),
       tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst")),
       tabPanel("Debug", h2("Debug"), textOutput("debug"))

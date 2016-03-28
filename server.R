@@ -4,15 +4,16 @@ library(shinyBS)
 library(shinyjs)
 library(modeest)
 library(DT)
-library(ggplot2)
+library(RMySQL)
 
-# Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
-   inFile <- NULL
-   datoscsv <- NULL
-   cn <- NULL
-   grf <- NULL
-   
+  inFile <- NULL
+  datoscsv <- NULL
+  cn <- NULL
+  grf <- NULL
+  conexionDB <- NULL
+  listTables <- NULL
+  
   output$cargaDatos <- renderUI({
     
     if(input$sel){
@@ -26,40 +27,75 @@ shinyServer(function(input, output, session) {
         }
       }))
       switch (input$tDatos,
-        'CSV' = wellPanel(
-          fileInput('valorescsv', 'Selecciona un archivo CSV:',
-                    accept=c('text/csv', 
-                             'text/comma-separated-values,text/plain', 
-                             '.csv')),
-          tags$hr(),
-          checkboxInput('header', 'Cabeceras', TRUE),
-          radioButtons('sep', 'Separadores',
-                       c(Coma=',',
-                         'Punto y coma'=';',
-                         Tabulador='\t'),
-                       ','),
-          radioButtons('quote', 'Comillas',
-                       c(Ninguna='',
-                         'Comilla doble'='"',
-                         'Comilla simple'="'"),
-                       '"')
-        ),
-        'Manual' = wellPanel(
-            tags$label("Ingresa los datos separados por comas", name="valores"),
-            tags$hr(),
-            tags$textarea(id = "valtxt", name="valtxt", cols = 50, rows = 10),
-            bsButton(inputId = "subman", label = "Enviar", style = "info", type = "submit")
-        ),
-        '-- Elige una opcion --' = createAlert(session, "alert", "alErr", title = "Error",
-                                               content = "Escoge una opción para cargar los datos", append = TRUE)
+              'CSV' = wellPanel(
+                fileInput('valorescsv', 'Selecciona un archivo CSV:',
+                          accept=c('text/csv', 
+                                   'text/comma-separated-values,text/plain', 
+                                   '.csv')),
+                tags$hr(),
+                checkboxInput('header', 'Cabeceras', TRUE),
+                radioButtons('sep', 'Separadores',
+                             c(Coma=',',
+                               'Punto y coma'=';',
+                               Tabulador='\t'),
+                             ','),
+                radioButtons('quote', 'Comillas',
+                             c(Ninguna='',
+                               'Comilla doble'='"',
+                               'Comilla simple'="'"),
+                             '"')
+              ),
+              'Manual' = wellPanel(
+                tags$label("Ingresa los datos separados por comas", name="valores"),
+                tags$hr(),
+                tags$textarea(id = "valtxt", name="valtxt", cols = 50, rows = 10),
+                bsButton(inputId = "subman", label = "Enviar", style = "info", type = "submit")
+              ),
+              'Base de datos' = wellPanel(
+                fluidRow(
+                  column(
+                    8, tags$label("Ingresa los datos de acceso a la base de datos MySQL"),
+                    tags$hr(),
+                    textInput(inputId = "usuario", label = "Usuario:", placeholder = "Usuario para acceder"),
+                    passwordInput(inputId = "passwd", label = "Contraseña:"),
+                    textInput(inputId = "hst", label = "Host:", placeholder = "Host", value = "localhost"),
+                    textInput(inputId = "nombredb", label = "Nombre de la base de datos:", placeholder = "Nombre de la base de datos"),
+                    bsButton(inputId = "testConn", label = "Probar conexión", style = "success", type = "button"),
+                    bsButton(inputId = "subdb", label = "Usar conexion", style = "info", type = "submit")
+                  ),
+                  column(
+                    4, bsAlert("alErrDB"), bsAlert("alSuccDB")
+                  )
+                )
+              ),
+              '-- Elige una opcion --' = createAlert(session, "alert", "alErr", title = "Error",
+                                                     content = "Escoge una opción para cargar los datos", append = TRUE)
       )
     }
     
   })
   
+  observeEvent(input$testConn,({
+    
+    conexionDB <<- tryCatch(dbConnect(MySQL(), username=input$usuario, password=input$passwd, host=input$hst, dbname=input$nombredb),
+                            error = function(e){
+                              createAlert(session, "alErrDB", "alErr", title = "Error",
+                                          content = "No se ha podido conectar a la base de datos especificada", append = TRUE, style = "danger")
+                            })
+    if(typeof(conexionDB) == "S4"){
+      createAlert(session, "alSuccDB", "alSucc", title = "Success!",
+                  content = "Conexion éxitosa :)", append = TRUE, style = "success")
+    }
+  }))
+  
+  output$choiceTableBD <- renderUI({
+    listTables <<- dbListTables(conn = conexionDB)
+    selectInput(inputId = "selTable", label = "Selecciona una tabla de la base de datos:", choices = listTables)
+  })
+  
   # Debug
   output$debug <- renderText({
-    paste(input$optMtc)
+    paste(conexionDB)
   })
   
   
@@ -78,8 +114,10 @@ shinyServer(function(input, output, session) {
         inputValues <- as.numeric(unlist(tmp))
         inputValues[is.na(inputValues)] <- 0
         datoscsv <<- data.frame(inputValues)
-        table(datoscsv)
+        #table(datoscsv)
       }
+    }else if(input$tDatos == "Base de datos" && input$subdb == TRUE){
+      
     }else{
       inFile <<- input$valorescsv
       
@@ -97,16 +135,16 @@ shinyServer(function(input, output, session) {
   
   # UI para el grafico
   output$choicePlot <- renderUI({
-      cn <<- names(datoscsv)
-      sidebarLayout(
-        sidebarPanel(
-          selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
-        ),
-        mainPanel(
-          h3("Gráfico"),
-          plotOutput("graf")
-        )
+    cn <<- names(datoscsv)
+    sidebarLayout(
+      sidebarPanel(
+        selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
+      ),
+      mainPanel(
+        h3("Gráfico"),
+        plotOutput("graf")
       )
+    )
   })
   
   # Grafico
