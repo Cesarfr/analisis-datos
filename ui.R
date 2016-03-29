@@ -25,7 +25,7 @@ shinyUI(fluidPage(
     ),
     # Paneles del area de trabajo
     tabsetPanel(
-      tabPanel("Tabla", h2("Tabla de los datos"), uiOutput("choiceTableBD"), DT::dataTableOutput("tablaDatos")),
+      tabPanel("Tabla", bsAlert("conSuccDB"), h2("Tabla de los datos"), uiOutput("choiceTableBD"), DT::dataTableOutput("tablaDatos")),
       tabPanel("Gráfica", uiOutput("choicePlot")),
       tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst")),
       tabPanel("Debug", h2("Debug"), textOutput("debug"))
