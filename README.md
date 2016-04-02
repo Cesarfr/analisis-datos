@@ -9,4 +9,4 @@ Esta aplicación usa el lenguaje de programación R, el paquete Shiny para crear
 * DT
 * RMySQL
 
-install.packages("shiny", "shinyBS", "modeest", "DT","RMySQL")
+install.packages(c("shiny", "shinyBS", "modeest", "DT","RMySQL"))
