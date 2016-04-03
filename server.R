@@ -263,6 +263,15 @@ shinyServer(function(input, output, session) {
       output$p90 <- renderText({
         round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
       })
+      output$varianza <- renderText({
+        round(var(as.double(datoscsv[[grf]])), digits = 5)
+      })
+      output$desest <- renderText({
+        round(sd(as.double(datoscsv[[grf]])), digits = 5)
+      })
+      output$sesgo <- renderText({
+        round(skewness(as.double(datoscsv[[grf]])), digits = 5)
+      })
     }else{
       output$media <- renderText({
         "No es posible calcular para datos cualitativos"
@@ -290,7 +299,16 @@ shinyServer(function(input, output, session) {
       })
       output$p90 <- renderText({
         "No es posible calcular para datos cualitativos"
-      }) 
+      })
+      output$varianza <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$desest <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$sesgo <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
     }
   }))
   
@@ -369,6 +387,31 @@ shinyServer(function(input, output, session) {
           4, tags$div(class="panel panel-success",
                       tags$div(class="panel-heading", tags$h4(class="panel-title"), "Percentil 90"),
                       tags$div(class="panel-body", textOutput("p90"))
+          )
+        )
+      ),
+      fluidRow(
+        column(
+          12, h3("Otros datos")
+        )
+      ),
+      fluidRow(
+        column(
+          4, tags$div(class="panel panel-warning",
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Varianza"),
+                      tags$div(class="panel-body", textOutput("varianza"))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-warning",
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Desviación estándar"),
+                      tags$div(class="panel-body", textOutput("desest"))
+          )
+        ),
+        column(
+          4, tags$div(class="panel panel-warning",
+                      tags$div(class="panel-heading", tags$h4(class="panel-title"), "Sesgo"),
+                      tags$div(class="panel-body", textOutput("sesgo"))
           )
         )
       )
