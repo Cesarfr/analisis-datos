@@ -129,13 +129,14 @@ shinyServer(function(input, output, session) {
       rs <- dbSendQuery(conexionDB, paste0("SELECT * FROM ", tableSelected))
       datos <- dbFetch(rs, n = -1)
       dbClearResult(rs)
-      data.frame(datos)
+      datosObt <- data.frame(datos)
+      return(datosObt)
     })
   )
   
   # Debug
   output$debug <- renderText({
-    print(conexionDB)
+    paste("", tableSelected)
   })
   
   
@@ -172,18 +173,39 @@ shinyServer(function(input, output, session) {
     }
   }), class = "cell-border stripe", extensions = "Responsive")
   
-  # UI para el grafico
-  output$choicePlot <- renderUI({
-    cn <<- names(datoscsv)
-    sidebarLayout(
-      sidebarPanel(
-        selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
-      ),
-      mainPanel(
-        h3("Gráfico"),
-        plotOutput("graf")
-      )
-    )
+  observe({
+    if(is.null(input$selTable)){
+      # UI para el grafico
+      output$choicePlot <- renderUI({
+        cn <<- names(datoscsv)
+        sidebarLayout(
+          sidebarPanel(
+            selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
+          ),
+          mainPanel(
+            h3("Gráfico"),
+            plotOutput("graf")
+          )
+        )
+      })
+      
+    }else{
+      observeEvent(input$selTable,({
+        # UI para el grafico
+        output$choicePlot <- renderUI({
+          cn <<- names(datoscsv)
+          sidebarLayout(
+            sidebarPanel(
+              selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
+            ),
+            mainPanel(
+              h3("Gráfico"),
+              plotOutput("graf")
+            )
+          )
+        })
+      }))
+    }
   })
   
   # Grafico
