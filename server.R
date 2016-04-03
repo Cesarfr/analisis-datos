@@ -5,6 +5,8 @@ library(shinyjs)
 library(modeest)
 library(DT)
 library(RMySQL)
+library(plotrix)
+library(agricolae)
 
 shinyServer(function(input, output, session) {
   inFile <- NULL
@@ -14,6 +16,7 @@ shinyServer(function(input, output, session) {
   conexionDB <- NULL
   listTables <- NULL
   tableSelected <- NULL
+  tipoDatos <- NULL
   
   output$cargaDatos <- renderUI({
     
@@ -98,6 +101,7 @@ shinyServer(function(input, output, session) {
         createAlert(session, "conSuccDB", "alSucc", title = "Success!",
                     content = "Conexion éxitosa :)", append = TRUE, style = "success")
         shinyjs::hide("cargar", anim = TRUE)
+        shinyjs::hide("conSuccDB", anim = TRUE, time = 5, animType = "fade")
       },
       error = function(e){
         createAlert(session, "conSuccDB", "alErr", title = "Error",
@@ -141,7 +145,7 @@ shinyServer(function(input, output, session) {
   
   
   # Tabla de datos
-  output$tablaDatos <- DT::renderDataTable(DT::datatable({
+  output$tablaDatos <- DT::renderDataTable(({
     
     if(input$tDatos == "Manual" && input$subman == TRUE){
       inFile <<- input$valtxt
@@ -176,80 +180,118 @@ shinyServer(function(input, output, session) {
   observe({
     if(is.null(input$selTable)){
       # UI para el grafico
-      output$choicePlot <- renderUI({
-        cn <<- names(datoscsv)
-        sidebarLayout(
-          sidebarPanel(
-            selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
-          ),
-          mainPanel(
-            h3("Gráfico"),
-            plotOutput("graf")
-          )
-        )
-      })
-      
+      chPlot()
     }else{
       observeEvent(input$selTable,({
         # UI para el grafico
-        output$choicePlot <- renderUI({
-          cn <<- names(datoscsv)
-          sidebarLayout(
-            sidebarPanel(
-              selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
-            ),
-            mainPanel(
-              h3("Gráfico"),
-              plotOutput("graf")
-            )
-          )
-        })
+        chPlot()
       }))
     }
   })
   
+  chPlot <- function(){
+    output$choicePlot <- renderUI({
+      cn <<- names(datoscsv)
+      sidebarLayout(
+        sidebarPanel(
+          selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
+        ),
+        mainPanel(
+          h3("Gráfico"),
+          plotOutput("graf")
+        )
+      )
+    })
+  }
+  
   # Grafico
   output$graf <- renderPlot({
     grf <<- input$selPlot
-    hist(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
-         col = '#f59233', border = 'white')
+    tipoDatos <<- lapply(datoscsv[[grf]], class)
+
+    if(tipoDatos == "integer" || tipoDatos == "numeric"){
+      # Datos cuantitativos
+      gr <- graph.freq(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
+           col = '#f59233', border = 'white')
+      polygon.freq(gr, col = "#FF00F3", lty = 4, lwd = 2, type="b")
+      abline(v = mean(as.double(datoscsv[[grf]])), col = "red", lwd = 2)
+      abline(v = median(as.double(datoscsv[[grf]])), col = "blue", lwd = 2)
+      abline(v = mfv(as.double(datoscsv[[grf]])), col = "#37CF11", lwd = 2)
+      legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "#37CF11", "blue"), lwd = c(2, 2, 2), bty = "n")
+    }else{
+      # Datos cualitativos
+      valores <- table(datoscsv[[grf]])
+      lbls <- names(valores)
+      porcent <- round(valores/sum(valores)*100)
+      lbls <- paste(lbls, porcent)
+      lbls <- paste(lbls, "%", sep = "")
+      pie3D(
+        valores, labels = lbls, main = paste("Gráfica de pastel de", grf), radius = 1, labelrad = 1.5, explode = 0.1, 
+        col = rainbow(length(valores)), shade = 0.7, theta = 0.9, start = 3
+      )
+    }
     re()
   })
   
   # Cambio de valores segun lo elegido en el grafico
   re <- eventReactive(input$selPlot, ({
-    output$media <- renderText({
-      round(mean(as.double(datoscsv[[grf]])), digits = 2)
-    })
-    output$mediana <- renderText({
-      round(median(as.double(datoscsv[[grf]])), digits = 2)
-    })
-    output$moda <- renderText({
-      round(as.numeric(mlv(as.double(datoscsv[[grf]]))[1]), digits = 2)
-    })
-    output$q1 <- renderText({
-      round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
-    })
-    output$q2 <- renderText({
-      round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
-    })
-    output$q3 <- renderText({
-      round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
-    })
-    output$p10 <- renderText({
-      round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
-    })
-    output$p50 <- renderText({
-      round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
-    })
-    output$p90 <- renderText({
-      round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
-    })
-    
-    abline(v = mean(as.double(datoscsv[[grf]])), col = "red")
-    abline(v = median(as.double(datoscsv[[grf]])), col = "blue")
-    abline(v = mlv(as.double(datoscsv[[grf]]))[1], col = "green")
-    legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "blue", "green"), lwd = c(2, 2, 2), bty = "n")
+    if(tipoDatos == "integer" || tipoDatos == "numeric"){
+      output$media <- renderText({
+        round(mean(as.double(datoscsv[[grf]])), digits = 2)
+      })
+      output$mediana <- renderText({
+        round(median(as.double(datoscsv[[grf]])), digits = 2)
+      })
+      output$moda <- renderText({
+        paste(round(mfv(as.double(datoscsv[[grf]])), digits = 2), collapse = ", ")
+      })
+      output$q1 <- renderText({
+        round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
+      })
+      output$q2 <- renderText({
+        round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+      })
+      output$q3 <- renderText({
+        round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
+      })
+      output$p10 <- renderText({
+        round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
+      })
+      output$p50 <- renderText({
+        round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+      })
+      output$p90 <- renderText({
+        round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
+      })
+    }else{
+      output$media <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$mediana <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$moda <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$q1 <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$q2 <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$q3 <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$p10 <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$p50 <- renderText({
+        "No es posible calcular para datos cualitativos"
+      })
+      output$p90 <- renderText({
+        "No es posible calcular para datos cualitativos"
+      }) 
+    }
   }))
   
   # Calculos estadisticos
