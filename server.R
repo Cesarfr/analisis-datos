@@ -17,6 +17,9 @@ shinyServer(function(input, output, session) {
   listTables <- NULL
   tableSelected <- NULL
   tipoDatos <- NULL
+  gr <- NULL
+  valores <- NULL
+  porcent <- NULL
   
   output$cargaDatos <- renderUI({
     
@@ -192,13 +195,25 @@ shinyServer(function(input, output, session) {
   chPlot <- function(){
     output$choicePlot <- renderUI({
       cn <<- names(datoscsv)
-      sidebarLayout(
-        sidebarPanel(
-          selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
-        ),
-        mainPanel(
-          h3("Gráfico"),
-          plotOutput("graf")
+      fluidRow(
+        column(
+          12,
+          fluidRow(
+            column(class="col-sm-offset-4",
+                   4, wellPanel(
+                     selectInput(inputId = "selPlot", label = "Selecciona los datos a gráficar", choices = cn)
+                   )
+            )
+          ),
+          fluidRow(
+            column(
+              5, DT::dataTableOutput("tbDatAg")
+            ),
+            column(
+              7, h3("Gráfico"),
+              plotOutput("graf")
+            )
+          )
         )
       )
     })
@@ -211,7 +226,7 @@ shinyServer(function(input, output, session) {
 
     if(tipoDatos == "integer" || tipoDatos == "numeric"){
       # Datos cuantitativos
-      gr <- graph.freq(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
+      gr <<- graph.freq(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
            col = '#f59233', border = 'white')
       polygon.freq(gr, col = "#FF00F3", lty = 4, lwd = 2, type="b")
       abline(v = mean(as.double(datoscsv[[grf]])), col = "red", lwd = 2)
@@ -220,9 +235,9 @@ shinyServer(function(input, output, session) {
       legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "#37CF11", "blue"), lwd = c(2, 2, 2), bty = "n")
     }else{
       # Datos cualitativos
-      valores <- table(datoscsv[[grf]])
+      valores <<- table(datoscsv[[grf]])
       lbls <- names(valores)
-      porcent <- round(valores/sum(valores)*100)
+      porcent <<- round(valores/sum(valores)*100)
       lbls <- paste(lbls, porcent)
       lbls <- paste(lbls, "%", sep = "")
       pie3D(
@@ -272,6 +287,11 @@ shinyServer(function(input, output, session) {
       output$sesgo <- renderText({
         round(skewness(as.double(datoscsv[[grf]])), digits = 5)
       })
+      output$tbDatAg <- DT::renderDataTable(({
+        tbf <- table.freq(gr)
+        colnames(tbf) <- c("LInf", "LSup", "MClase", "Frecuencia", "Porc", "FrecAcum", "PorcAcum")
+        tbf
+      }), class = "cell-border stripe", extensions = "Responsive")
     }else{
       output$media <- renderText({
         "No es posible calcular para datos cualitativos"
@@ -309,6 +329,12 @@ shinyServer(function(input, output, session) {
       output$sesgo <- renderText({
         "No es posible calcular para datos cualitativos"
       })
+      output$tbDatAg <- DT::renderDataTable(({
+        dtf <- data.frame(valores)
+        colnames(dtf) <- c("Valores", "Frecuencia")
+        dtf$Porcentaje <- porcent
+        dtf
+      }), class = "cell-border stripe", extensions = "Responsive")
     }
   }))
   
