@@ -28,6 +28,11 @@ shinyUI(fluidPage(
       tabPanel("Tabla", bsAlert("conSuccDB"), h2("Tabla de los datos"), uiOutput("choiceTableBD"), DT::dataTableOutput("tablaDatos")),
       tabPanel("Gráfica", uiOutput("choicePlot")),
       tabPanel("Cálculos estadísticos", h2("Cálculos estadísticos"), uiOutput("calcEst")),
-      tabPanel("Debug", h2("Debug"), textOutput("debug"))
+      tabPanel(
+        "Reporte",
+        h2("Reporte"),
+        radioButtons('format', 'Selecciona un formato para el reporte', c('PDF', 'HTML', 'Word'), inline = TRUE),
+        downloadButton('downloadReport', label = "Descargar")
       )
+    )
 ))

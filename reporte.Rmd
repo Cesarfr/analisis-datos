@@ -1,0 +1,95 @@
+---
+always_allow_html: yes
+geometry: margin=1.5cm
+---
+# Reporte del `r fecha`
+
+## Tabla del gráfico
+
+```{r, echo=FALSE}
+if(tipoDatos == "integer" || tipoDatos == "numeric"){
+  tbf <- table.freq(gr)
+  colnames(tbf) <- c("LInf", "LSup", "MClase", "Frecuencia", "Porc", "FrecAcum", "PorcAcum")
+  if(input$format == "PDF" || input$format == "Word"){
+    knitr::kable(tbf)
+  }else{
+    htmltools::tagList(
+      datatable(tbf)
+    )
+  }
+}else{
+  dtf <- data.frame(valores)
+  colnames(dtf) <- c("Valores", "Frecuencia")
+  dtf$Porcentaje <- porcent
+  if(input$format == "PDF" || input$format == "Word"){
+    knitr::kable(dtf)
+  }else{
+    htmltools::tagList(
+      datatable(dtf)
+    )
+  }
+}
+
+```
+
+## Gráfico de los datos 
+
+```{r plot, echo=FALSE, fig.align='center'}
+grf <<- input$selPlot
+tipoDatos <<- lapply(datoscsv[[grf]], class)
+
+if(tipoDatos == "integer" || tipoDatos == "numeric"){
+  # Datos cuantitativos
+  gr <<- graph.freq(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
+       col = '#f59233', border = 'white')
+  polygon.freq(gr, col = "#FF00F3", lty = 4, lwd = 2, type="b")
+  abline(v = mean(as.double(datoscsv[[grf]])), col = "red", lwd = 2)
+  abline(v = median(as.double(datoscsv[[grf]])), col = "blue", lwd = 2)
+  abline(v = mfv(as.double(datoscsv[[grf]])), col = "#37CF11", lwd = 2)
+  legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "#37CF11", "blue"), lwd = c(2, 2, 2), bty = "n")
+}else{
+  # Datos cualitativos
+  valores <<- table(datoscsv[[grf]])
+  lbls <- names(valores)
+  porcent <<- round(valores/sum(valores)*100)
+  lbls <- paste(lbls, porcent)
+  lbls <- paste(lbls, "%", sep = "")
+  pie3D(
+    valores, labels = lbls, main = paste("Gráfica de pastel de", grf), radius = 1, labelrad = 1.5, explode = 0.1, 
+    col = rainbow(length(valores)), shade = 0.7, theta = 0.9, start = 3
+  )
+}
+```
+
+## Calculos estadisticos
+
+```{r}
+if(tipoDatos == "integer" || tipoDatos == "numeric"){
+  media <- round(mean(as.double(datoscsv[[grf]])), digits = 2)
+  mediana <- round(median(as.double(datoscsv[[grf]])), digits = 2)
+  moda <- paste(round(mfv(as.double(datoscsv[[grf]])), digits = 2), collapse = ", ")
+  q1 <- round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
+  q2 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+  q3 <- round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
+  p10 <- round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
+  p50 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+  p90 <- round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
+  varianza <- round(var(as.double(datoscsv[[grf]])), digits = 5)
+  desvest <- round(sd(as.double(datoscsv[[grf]])), digits = 5)
+  sesgo <- round(skewness(as.double(datoscsv[[grf]])), digits = 5)
+  calest <- c(media, mediana, moda, q1, q2, q3, p10, p50, p90, varianza, desvest, sesgo)
+  m <- matrix(calest, nrow = 1)
+  colnames(m) <- c("Media", "Mediana", "Moda", "Cuartil 1", "Cuartil 2", "Cuartil 3", "Percentil 10", "Percentil 50", "Percentil 90", "Varianza", "DesvEst", "Sesgo")
+  if(input$format == "PDF" || input$format == "Word"){
+    knitr::kable(m)
+  }else{
+    htmltools::tagList(
+      datatable(m)
+    )
+  }
+  }else{
+      print("No es posible calcular para datos cualitativos")
+  }
+
+```
+

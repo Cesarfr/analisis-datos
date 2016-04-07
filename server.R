@@ -7,6 +7,8 @@ library(DT)
 library(RMySQL)
 library(plotrix)
 library(agricolae)
+library(knitr)
+library(rmarkdown)
 
 shinyServer(function(input, output, session) {
   inFile <- NULL
@@ -20,6 +22,7 @@ shinyServer(function(input, output, session) {
   gr <- NULL
   valores <- NULL
   porcent <- NULL
+  fecha <- NULL
   
   output$cargaDatos <- renderUI({
     
@@ -140,12 +143,6 @@ shinyServer(function(input, output, session) {
       return(datosObt)
     })
   )
-  
-  # Debug
-  output$debug <- renderText({
-    paste("", tableSelected)
-  })
-  
   
   # Tabla de datos
   output$tablaDatos <- DT::renderDataTable(({
@@ -444,5 +441,33 @@ shinyServer(function(input, output, session) {
     )
     
   })
+  
+  # PDF
+  output$downloadReport <- downloadHandler(
+    filename = function() {
+      nombre <- "Reporte"
+      fecha <<- format(Sys.time(), "%Y/%m/%d %H:%M:%S")
+      nombre <- paste(nombre, fecha)
+      paste(nombre, sep = '.', switch(
+        input$format, PDF = 'pdf', HTML = 'html', Word = 'docx'
+      ))
+    },
+    
+    content = function(file) {
+      src <- normalizePath('reporte.Rmd')
+      
+      # temporarily switch to the temp dir, in case you do not have write
+      # permission to the current working directory
+      owd <- setwd(tempdir())
+      on.exit(setwd(owd))
+      file.copy(src, 'reporte.Rmd', overwrite = TRUE)
+      
+      out <- render('reporte.Rmd', switch(
+        input$format,
+        PDF = pdf_document(), HTML = html_document(), Word = word_document()
+      ))
+      file.rename(out, file)
+    }
+  )
   
 })
