@@ -445,7 +445,7 @@ shinyServer(function(input, output, session) {
   # PDF
   output$downloadReport <- downloadHandler(
     filename = function() {
-      nombre <- "Reporte"
+      nombre <- paste("Reporte de", grf)
       fecha <<- format(Sys.time(), "%Y/%m/%d %H:%M:%S")
       nombre <- paste(nombre, fecha)
       paste(nombre, sep = '.', switch(

@@ -2,7 +2,7 @@
 always_allow_html: yes
 geometry: margin=1.5cm
 ---
-# Reporte del `r fecha`
+# Reporte de `r grf` del `r fecha`
 
 ## Tabla del gráfico
 
@@ -29,6 +29,38 @@ if(tipoDatos == "integer" || tipoDatos == "numeric"){
     )
   }
 }
+
+```
+
+## Cálculos estadísticos
+
+```{r, echo=FALSE}
+if(tipoDatos == "integer" || tipoDatos == "numeric"){
+  media <- round(mean(as.double(datoscsv[[grf]])), digits = 2)
+  mediana <- round(median(as.double(datoscsv[[grf]])), digits = 2)
+  moda <- paste(round(mfv(as.double(datoscsv[[grf]])), digits = 2), collapse = ", ")
+  q1 <- round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
+  q2 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+  q3 <- round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
+  p10 <- round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
+  p50 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
+  p90 <- round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
+  varianza <- round(var(as.double(datoscsv[[grf]])), digits = 5)
+  desvest <- round(sd(as.double(datoscsv[[grf]])), digits = 5)
+  sesgo <- round(skewness(as.double(datoscsv[[grf]])), digits = 5)
+  calest <- c(media, mediana, moda, q1, q2, q3, p10, p50, p90, varianza, desvest, sesgo)
+  m <- data.frame(calest, row.names = c("Media", "Mediana", "Moda", "Cuartil 1", "Cuartil 2", "Cuartil 3", "Percentil 10", "Percentil 50", "Percentil 90", "Varianza", "DesvEst", "Sesgo"))
+  colnames(m) <- "Valores"
+  if(input$format == "PDF" || input$format == "Word"){
+    knitr::kable(m)
+  }else{
+    htmltools::tagList(
+      datatable(m)
+    )
+  }
+  }else{
+      print("No es posible calcular para datos cualitativos")
+  }
 
 ```
 
@@ -60,36 +92,3 @@ if(tipoDatos == "integer" || tipoDatos == "numeric"){
   )
 }
 ```
-
-## Calculos estadisticos
-
-```{r}
-if(tipoDatos == "integer" || tipoDatos == "numeric"){
-  media <- round(mean(as.double(datoscsv[[grf]])), digits = 2)
-  mediana <- round(median(as.double(datoscsv[[grf]])), digits = 2)
-  moda <- paste(round(mfv(as.double(datoscsv[[grf]])), digits = 2), collapse = ", ")
-  q1 <- round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
-  q2 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
-  q3 <- round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
-  p10 <- round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
-  p50 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
-  p90 <- round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
-  varianza <- round(var(as.double(datoscsv[[grf]])), digits = 5)
-  desvest <- round(sd(as.double(datoscsv[[grf]])), digits = 5)
-  sesgo <- round(skewness(as.double(datoscsv[[grf]])), digits = 5)
-  calest <- c(media, mediana, moda, q1, q2, q3, p10, p50, p90, varianza, desvest, sesgo)
-  m <- matrix(calest, nrow = 1)
-  colnames(m) <- c("Media", "Mediana", "Moda", "Cuartil 1", "Cuartil 2", "Cuartil 3", "Percentil 10", "Percentil 50", "Percentil 90", "Varianza", "DesvEst", "Sesgo")
-  if(input$format == "PDF" || input$format == "Word"){
-    knitr::kable(m)
-  }else{
-    htmltools::tagList(
-      datatable(m)
-    )
-  }
-  }else{
-      print("No es posible calcular para datos cualitativos")
-  }
-
-```
-
