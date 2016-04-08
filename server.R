@@ -204,13 +204,14 @@ shinyServer(function(input, output, session) {
           ),
           fluidRow(
             column(class="col-sm-offset-1",
-              10, DT::dataTableOutput("tbDatAg")
+                  10, DT::dataTableOutput("tbDatAg")
             )
           ),
           fluidRow(
             column(class="col-sm-offset-1",
-              10, h3("Gráfico"),
-              plotOutput("graf")
+                   10, h3("Gráfico"),
+                   downloadButton('downloadPlot', label = "Descargar gráfico"),
+                   plotOutput("graf")
             )
           )
         )
@@ -470,6 +471,44 @@ shinyServer(function(input, output, session) {
       ))
       file.rename(out, file)
     }
+  )
+  
+  # Imagen PNG
+  output$downloadPlot <- downloadHandler(
+    filename = function() {
+      nombre <- paste("Grafico de", grf)
+      fecha <<- format(Sys.time(), "%Y/%m/%d %H:%M:%S")
+      nombre <- paste(nombre, fecha)
+      paste(nombre, sep = '.', "png")
+    },
+    
+    content = function(file) {
+      png(file, width = 700, height = 700)
+      if(tipoDatos == "integer" || tipoDatos == "numeric"){
+        # Datos cuantitativos
+        gr <<- graph.freq(as.double(datoscsv[[grf]]), xlab = grf, ylab = "Frecuencia", main = paste("Histograma de", grf),
+                          col = '#f59233', border = 'white')
+        polygon.freq(gr, col = "#FF00F3", lty = 4, lwd = 2, type="b")
+        abline(v = mean(as.double(datoscsv[[grf]])), col = "red", lwd = 2)
+        abline(v = median(as.double(datoscsv[[grf]])), col = "blue", lwd = 2)
+        abline(v = mfv(as.double(datoscsv[[grf]])), col = "#37CF11", lwd = 2)
+        legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "#37CF11", "blue"), lwd = c(2, 2, 2), bty = "n")
+        dev.off()
+      }else{
+        # Datos cualitativos
+        valores <<- table(datoscsv[[grf]])
+        lbls <- names(valores)
+        porcent <<- round(valores/sum(valores)*100)
+        lbls <- paste(lbls, porcent)
+        lbls <- paste(lbls, "%", sep = "")
+        pie3D(
+          valores, labels = lbls, main = paste("Gráfica de pastel de", grf), explode = 0.1, 
+          col = rainbow(length(valores)), theta = 0.9
+        )
+        dev.off()
+      }
+    },
+    contentType = 'image/png'
   )
   
 })
