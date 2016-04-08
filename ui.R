@@ -33,6 +33,11 @@ shinyUI(fluidPage(
         h2("Reporte"),
         radioButtons('format', 'Selecciona un formato para el reporte', c('PDF', 'HTML', 'Word'), inline = TRUE),
         downloadButton('downloadReport', label = "Descargar")
+      ),
+      tabPanel(
+        "Regresion",
+        uiOutput("rs1"),
+        plotOutput("rsgr")
       )
     )
 ))

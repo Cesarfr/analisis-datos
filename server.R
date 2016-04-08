@@ -181,6 +181,8 @@ shinyServer(function(input, output, session) {
     if(is.null(input$selTable)){
       # UI para el grafico
       chPlot()
+      regSelect()
+      rndRegPlot()
     }else{
       observeEvent(input$selTable,({
         # UI para el grafico
@@ -215,6 +217,33 @@ shinyServer(function(input, output, session) {
       )
     })
   }
+  
+  # Regresion
+  regSelect <- function(){
+    output$rs1 <- renderUI({
+      fluidRow(
+        column(
+          5, wellPanel(
+            selectInput(inputId = "selData1", label = "Selecciona los datos para 'x'", choices = cn)
+          )
+        ),
+        column(
+          5, wellPanel(
+            selectInput(inputId = "selData2", label = "Selecciona los datos para 'y'", choices = cn)
+          )
+        ),
+        column(
+          2, bsButton(inputId = "btnPR", "Graficar")
+        )
+      )
+    })
+  }
+  
+  rndRegPlot <- eventReactive(input$btnPR,{
+    output$rsgr <- renderPlot({
+      plot(as.double(datoscsv[[input$selData1]]), as.double(datoscsv[[input$selData1]]))
+    })
+  })
   
   # Grafico
   output$graf <- renderPlot({
