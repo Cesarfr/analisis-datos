@@ -203,11 +203,13 @@ shinyServer(function(input, output, session) {
             )
           ),
           fluidRow(
-            column(
-              5, DT::dataTableOutput("tbDatAg")
-            ),
-            column(
-              7, h3("Gráfico"),
+            column(class="col-sm-offset-1",
+              10, DT::dataTableOutput("tbDatAg")
+            )
+          ),
+          fluidRow(
+            column(class="col-sm-offset-1",
+              10, h3("Gráfico"),
               plotOutput("graf")
             )
           )
