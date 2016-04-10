@@ -20,7 +20,9 @@ if(tipoDatos == "integer" || tipoDatos == "numeric"){
 }else{
   dtf <- data.frame(valores)
   colnames(dtf) <- c("Valores", "Frecuencia")
-  dtf$Porcentaje <- porcent
+  if(!is.null(noLevels) && noLevels <= 6){
+    dtf$Porcentaje <- porcent 
+  }
   if(input$format == "PDF" || input$format == "Word"){
     knitr::kable(dtf)
   }else{
@@ -36,20 +38,8 @@ if(tipoDatos == "integer" || tipoDatos == "numeric"){
 
 ```{r, echo=FALSE}
 if(tipoDatos == "integer" || tipoDatos == "numeric"){
-  media <- round(mean(as.double(datoscsv[[grf]])), digits = 2)
-  mediana <- round(median(as.double(datoscsv[[grf]])), digits = 2)
-  moda <- paste(round(mfv(as.double(datoscsv[[grf]])), digits = 2), collapse = ", ")
-  q1 <- round(quantile(as.double(datoscsv[[grf]]), .25), digits = 2)
-  q2 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
-  q3 <- round(quantile(as.double(datoscsv[[grf]]), .75), digits = 2)
-  p10 <- round(quantile(as.double(datoscsv[[grf]]), .10), digits = 2)
-  p50 <- round(quantile(as.double(datoscsv[[grf]]), .50), digits = 2)
-  p90 <- round(quantile(as.double(datoscsv[[grf]]), .90), digits = 2)
-  varianza <- round(var(as.double(datoscsv[[grf]])), digits = 5)
-  desvest <- round(sd(as.double(datoscsv[[grf]])), digits = 5)
-  sesgo <- round(skewness(as.double(datoscsv[[grf]])), digits = 5)
-  calest <- c(media, mediana, moda, q1, q2, q3, p10, p50, p90, varianza, desvest, sesgo)
-  m <- data.frame(calest, row.names = c("Media", "Mediana", "Moda", "Cuartil 1", "Cuartil 2", "Cuartil 3", "Percentil 10", "Percentil 50", "Percentil 90", "Varianza", "DesvEst", "Sesgo"))
+  calest <- c(media, mediana, moda, qu1, qu2, qu3, pe10, pe50, pe90, vari, desvest, sesg, curt, rang, mamin)
+  m <- data.frame(calest, row.names = c("Media", "Mediana", "Moda", "Cuartil 1", "Cuartil 2", "Cuartil 3", "Percentil 10", "Percentil 50", "Percentil 90", "Varianza", "DesvEst", "Sesgo", "Curtosis", "Rango", "Max-Min"))
   colnames(m) <- "Valores"
   if(input$format == "PDF" || input$format == "Word"){
     knitr::kable(m)
@@ -59,7 +49,7 @@ if(tipoDatos == "integer" || tipoDatos == "numeric"){
     )
   }
   }else{
-      print("No es posible calcular para datos cualitativos")
+      "No es posible calcular para datos cualitativos"
   }
 
 ```
@@ -81,14 +71,22 @@ if(tipoDatos == "integer" || tipoDatos == "numeric"){
   legend(x = "topright", c("Media", "Moda", "Mediana"), col = c("red", "#37CF11", "blue"), lwd = c(2, 2, 2), bty = "n")
 }else{
   # Datos cualitativos
+  noLevels <<- length(levels(datoscsv[[grf]]))
   valores <<- table(datoscsv[[grf]])
-  lbls <- names(valores)
-  porcent <<- round(valores/sum(valores)*100)
-  lbls <- paste(lbls, porcent)
-  lbls <- paste(lbls, "%", sep = "")
-  pie3D(
-    valores, labels = lbls, main = paste("Gráfica de pastel de", grf), radius = 1, labelrad = 1.5, explode = 0.1, 
-    col = rainbow(length(valores)), shade = 0.7, theta = 0.9, start = 3
-  )
+  if(noLevels <= 6){
+    lbls <- names(valores)
+    lbls <- names(valores)
+    porcent <<- round(valores/sum(valores)*100)
+    lbls <- paste(lbls, porcent)
+    lbls <- paste(lbls, "%", sep = "")
+    pie3D(
+      valores, labels = lbls, main = paste("Gráfica de pastel de", grf), radius = 1, labelrad = 1.5, explode = 0.1, 
+      col = rainbow(length(valores)), shade = 0.7, theta = 0.9, start = 3
+    )
+  }else if(noLevels > 6 && noLevels <=50){
+    barplot(valores, col = rainbow(length(valores)), main = paste("Gráfica de barras de", grf), xlab = "Valor", ylab = "Frecuencia", las=2)
+  }else{
+    barplot(valores, col = rainbow(length(valores)), main = paste("Gráfica de barras de", grf), xlab = "Valor", ylab = "Frecuencia")
+  }
 }
 ```
