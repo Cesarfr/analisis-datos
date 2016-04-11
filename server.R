@@ -41,6 +41,12 @@ shinyServer(function(input, output, session) {
   rang <- NULL
   curt <- NULL
   mamin <- NULL
+  x <- NULL
+  y <- NULL
+  modelos <- c("lineal", "cuadratico", "cubico", "potencial", "exponencial", "logaritmico", "inverso", "sigmoidal")
+  resRG <- NULL
+  
+  source('funciones.R', local=TRUE)
   
   output$cargaDatos <- renderUI({
     
@@ -206,11 +212,13 @@ shinyServer(function(input, output, session) {
       # UI para el grafico
       chPlot()
       regSelect()
-      rndRegPlot()
+      # rndRegPlot()
     }else{
       observeEvent(input$selTable,({
         # UI para el grafico
         chPlot()
+        regSelect()
+        # rndRegPlot()
       }))
     }
   })
@@ -255,27 +263,114 @@ shinyServer(function(input, output, session) {
     output$rs1 <- renderUI({
       fluidRow(
         column(
-          5, wellPanel(
+          6, wellPanel(
             selectInput(inputId = "selData1", label = "Selecciona los datos para 'x'", choices = cn)
           )
         ),
         column(
-          5, wellPanel(
+          6, wellPanel(
             selectInput(inputId = "selData2", label = "Selecciona los datos para 'y'", choices = cn)
           )
         ),
-        column(
-          2, bsButton(inputId = "btnPR", "Graficar")
+        column(class = "col-sm-offset-5 text-center",
+               2, bsButton(inputId = "btnPR", "Graficar", style="success", icon = icon("bar-chart-o"))
         )
       )
     })
   }
   
-  rndRegPlot <- eventReactive(input$btnPR,{
+  observeEvent(input$btnPR,{
+    # updateButton(session, "btnPR", disabled = TRUE)
+    # shinyjs::disable("selData1")
+    # shinyjs::disable("selData2")
     output$rsgr <- renderPlot({
-      plot(as.double(datoscsv[[input$selData1]]), as.double(datoscsv[[input$selData1]]))
+      x <<- input$selData1
+      y <<- input$selData2
+      plot(as.double(datoscsv[[x]]), as.double(datoscsv[[y]]), xlab = x, ylab = y,
+           main = paste("Gráfico de dispersión de", x, " - ", y))
+    })
+    output$chkTr <- renderUI({
+      fluidRow(
+        column(
+          6, DT::dataTableOutput("bestModel")
+        ),
+        column(
+          6, uiOutput("chkbtns")
+        ),
+        column(
+          12, 
+          uiOutput("resuReg")
+        )
+      )
+    })
+    output$bestModel <- DT::renderDataTable(({
+      compModels(datoscsv[[y]], datoscsv[[x]], modelos)
+    }), class = "cell-border stripe", extensions = "Responsive")
+    output$chkbtns <- renderUI({
+      wellPanel(
+        fluidRow(
+          column(
+            12, radioButtons(inputId = "chTR", label = "Selecciona el modelo de regresión que mejor se ajuste:",
+                             choices = modelos)
+          ),
+          column(class = "text-center",
+            12, bsButton(inputId = "btnCalcR", "Calcular modelo", style="info", icon = icon("send"))
+          )
+        ) 
+      )
     })
   })
+  
+  observeEvent(input$btnCalcR, {
+    output$resuReg <- renderUI({
+      fluidRow(
+        column(class="text-center",
+          12, h3(paste("Regresión de", y, " sobre ", x))
+        ),
+        column(class="col-sm-offset-3 text-center",
+          6, tags$br(), wellPanel(verbatimTextOutput("formula"))
+        )
+      )
+    })
+    output$formula <- renderPrint({
+      resRG <<- calcularRegresion(datoscsv[[y]], datoscsv[[x]], input$chTR)
+      pr()
+      if (input$chTR == "lineal"){
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", round(resRG$coefficients[2], 4), "(", x, ")")
+      }
+      else if (input$chTR == "cuadratico"){
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", x, "+", round(resRG$coefficients[2], 4), "(", x, "^2)")
+      }
+      else if (input$chTR == "cubico"){
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", x, "+", round(resRG$coefficients[2], 4), "(", x, "^2)", "+",
+              round(resRG$coefficients[2], 4), "(", x, "^3)")
+      }
+      else if (input$chTR == "potencial"){
+        paste("Formula:", y,"= log(", round(resRG$coefficients[1], 4), ") +", round(resRG$coefficients[2], 4), "log(", x, ")")
+      }
+      else if (input$chTR == "exponencial"){
+        paste("Formula:", y,"=log(", round(resRG$coefficients[1], 4), ") +", round(resRG$coefficients[2], 4), "(", x, ")")
+      }
+      else if (input$chTR == "logaritmico"){
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", round(resRG$coefficients[2], 4), "log(", x, ")")
+      }
+      else if (input$chTR == "inverso"){
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", round(resRG$coefficients[2], 4), "(1/", x, ")")
+      }
+      else if (input$chTR == "sigmoidal"){
+        paste("Formula:", y,"= log(", round(resRG$coefficients[1], 4), ") +", round(resRG$coefficients[2], 4), "(1/", x, ")")
+      }
+    })
+    
+  })
+  
+  pr <- function(){
+    output$plotRsgr <- renderPlot({
+      plot(as.double(datoscsv[[x]]), as.double(datoscsv[[y]]), xlab = x, ylab = y,
+           main = paste("Gráfico de", x, " - ", y))
+      abline(resRG$coefficients, col = "blue", lwd = 2)
+    })
+  }
   
   # Grafico
   output$graf <- renderPlot({

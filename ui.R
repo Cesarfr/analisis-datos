@@ -37,7 +37,9 @@ shinyUI(fluidPage(
       tabPanel(
         "Regresion",
         uiOutput("rs1"),
-        plotOutput("rsgr")
+        plotOutput("rsgr"),
+        uiOutput("chkTr"),
+        plotOutput("plotRsgr")
       )
     )
 ))
