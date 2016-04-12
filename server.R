@@ -288,6 +288,7 @@ shinyServer(function(input, output, session) {
       y <<- input$selData2
       plot(as.double(datoscsv[[x]]), as.double(datoscsv[[y]]), xlab = x, ylab = y,
            main = paste("Gráfico de dispersión de", x, " - ", y))
+      grid(lty = 1, lwd = 1)
     })
     output$chkTr <- renderUI({
       fluidRow(
@@ -304,7 +305,7 @@ shinyServer(function(input, output, session) {
       )
     })
     output$bestModel <- DT::renderDataTable(({
-      compModels(datoscsv[[y]], datoscsv[[x]], modelos)
+      compModels(as.double(datoscsv[[y]]), as.double(datoscsv[[x]]), modelos)
     }), class = "cell-border stripe", extensions = "Responsive")
     output$chkbtns <- renderUI({
       wellPanel(
@@ -327,8 +328,8 @@ shinyServer(function(input, output, session) {
         column(class="text-center",
           12, h3(paste("Regresión de", y, " sobre ", x))
         ),
-        column(class="col-sm-offset-3 text-center",
-          6, tags$br(), wellPanel(verbatimTextOutput("formula"))
+        column(class="col-sm-offset-2 text-center",
+          8, tags$br(), wellPanel(verbatimTextOutput("formula"))
         )
       )
     })
@@ -336,29 +337,29 @@ shinyServer(function(input, output, session) {
       resRG <<- calcularRegresion(datoscsv[[y]], datoscsv[[x]], input$chTR)
       pr()
       if (input$chTR == "lineal"){
-        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", round(resRG$coefficients[2], 4), "(", x, ")")
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(", x, "))")
       }
       else if (input$chTR == "cuadratico"){
-        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", x, "+", round(resRG$coefficients[2], 4), "(", x, "^2)")
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), x, ") + (", round(resRG$coefficients[3], 5), "(", x, "^2 ))")
       }
       else if (input$chTR == "cubico"){
-        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", x, "+", round(resRG$coefficients[2], 4), "(", x, "^2)", "+",
-              round(resRG$coefficients[2], 4), "(", x, "^3)")
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), x, ") + (", round(resRG$coefficients[3], 5), "(", x, "^2 ))", "+(",
+              round(resRG$coefficients[4], 5), "(", x, "^3 ))")
       }
       else if (input$chTR == "potencial"){
-        paste("Formula:", y,"= log(", round(resRG$coefficients[1], 4), ") +", round(resRG$coefficients[2], 4), "log(", x, ")")
+        paste("Formula: log(", y,") = log(", round(resRG$coefficients[1], 5), ") + (", round(resRG$coefficients[2], 5), "log(", x, "))")
       }
       else if (input$chTR == "exponencial"){
-        paste("Formula:", y,"=log(", round(resRG$coefficients[1], 4), ") +", round(resRG$coefficients[2], 4), "(", x, ")")
+        paste("Formula: log(", y,") = log(", round(resRG$coefficients[1], 5), ") + (", round(resRG$coefficients[2], 5), "(", x, "))")
       }
       else if (input$chTR == "logaritmico"){
-        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", round(resRG$coefficients[2], 4), "log(", x, ")")
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "log(", x, "))")
       }
       else if (input$chTR == "inverso"){
-        paste("Formula:", y,"=", round(resRG$coefficients[1], 4), "+", round(resRG$coefficients[2], 4), "(1/", x, ")")
+        paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(1/", x, "))")
       }
       else if (input$chTR == "sigmoidal"){
-        paste("Formula:", y,"= log(", round(resRG$coefficients[1], 4), ") +", round(resRG$coefficients[2], 4), "(1/", x, ")")
+        paste("Formula: log(", y,") =", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(1/", x, "))")
       }
     })
     
@@ -366,9 +367,35 @@ shinyServer(function(input, output, session) {
   
   pr <- function(){
     output$plotRsgr <- renderPlot({
-      plot(as.double(datoscsv[[x]]), as.double(datoscsv[[y]]), xlab = x, ylab = y,
-           main = paste("Gráfico de", x, " - ", y))
-      abline(resRG$coefficients, col = "blue", lwd = 2)
+      
+      if (input$chTR == "lineal"){
+        curve(resRG$coefficients[1] + (resRG$coefficients[2]*x), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "cuadratico"){
+        curve(resRG$coefficients[1] + (resRG$coefficients[2]*x) + (resRG$coefficients[3]*(x^2)),
+              col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "cubico"){
+        curve(resRG$coefficients[1] + (resRG$coefficients[2]*x) + (resRG$coefficients[3]*(x^2)) +
+                (resRG$coefficients[4]*(x^3)), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "potencial"){
+        curve(exp(resRG$coefficient[1]) * (x^(resRG$coefficient[2])), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "exponencial"){
+        curve(exp(resRG$coefficient[1]) * exp(resRG$coefficient[2] * x), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "logaritmico"){
+        curve(resRG$coefficient[1] + resRG$coefficient[2] * log(x), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "inverso"){
+        curve(resRG$coefficient[1] + (resRG$coefficient[2]/x), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      else if (input$chTR == "sigmoidal"){
+        curve(exp(resRG$coefficient[1] + (resRG$coefficient[2]/x)), col="blue", ylab = "Yteorica", main = "Gráfico ajustado", lwd=2)
+      }
+      legend(x = "bottomright", legend = "Curva ajustada", col ="blue" , lwd = 2, bty = "n")
+      grid(lty = 1, lwd = 1)
     })
   }
   
