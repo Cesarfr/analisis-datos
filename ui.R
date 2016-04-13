@@ -39,7 +39,8 @@ shinyUI(fluidPage(
         uiOutput("rs1"),
         plotOutput("rsgr"),
         uiOutput("chkTr"),
-        plotOutput("plotRsgr")
+        plotOutput("plotRsgr"),
+        uiOutput("dnwReg")
       )
     )
 ))

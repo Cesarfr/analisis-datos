@@ -1,4 +1,5 @@
-regModel <- function(y,x, models=c("lineal", "cuadratico", "cubico", "potencial", "exponencial", "logaritmico", "inverso", "sigmoidal"), subset=NULL, decimals=4){
+regModel <- function(y,x, models=c("lineal", "cuadratico", "cubico", "potencial", "exponencial", "logaritmico", "inverso", "inversoCuad", "inversoCub", "sigmoidal"),
+                     subset=NULL, decimals=4){
   if (length(models)==0){
     stop("Debe seleccionar un modelo!")
   }
@@ -47,6 +48,18 @@ regModel <- function(y,x, models=c("lineal", "cuadratico", "cubico", "potencial"
     r <- c(r,summary(m)$r.squared)
     p <- c(p,pf(q=c(summary(m)$fstatistic["value"]),df1=summary(m)$fstatistic["numdf"],df2=summary(m)$fstatistic["dendf"],lower.tail=FALSE))
   }
+  if ("inversoCuad" %in% models){
+    names <- c(names,"Inverso Cuadrado")
+    m <- lm(y~I(1/x^2),subset=subset)
+    r <- c(r,summary(m)$r.squared)
+    p <- c(p,pf(q=c(summary(m)$fstatistic["value"]),df1=summary(m)$fstatistic["numdf"],df2=summary(m)$fstatistic["dendf"],lower.tail=FALSE))
+  }
+  if ("inversoCub" %in% models){
+    names <- c(names,"Inverso Cúbico")
+    m <- lm(y~I(1/x^3),subset=subset)
+    r <- c(r,summary(m)$r.squared)
+    p <- c(p,pf(q=c(summary(m)$fstatistic["value"]),df1=summary(m)$fstatistic["numdf"],df2=summary(m)$fstatistic["dendf"],lower.tail=FALSE))
+  }
   if ("sigmoidal" %in% models){
     names <- c(names,"Sigmoidal")
     m <- lm(log(y)~I(1/x),subset=subset)
@@ -74,6 +87,8 @@ calcularRegresion <- function(y, x, mds){
          "exponencial" = {mdl <- lm(log(y)~x)},
          "logaritmico" = {mdl <- lm(y~log(x))},
          "inverso" = {mdl <- lm(y~I(1/x))},
+         "inversoCuad" = {mdl <- lm(y~I(1/x^2))},
+         "inversoCub" = {mdl <- lm(y~I(1/x^3))},
          "sigmoidal" = {mdl <- lm(log(y)~I(1/x))}
   )
   return(mdl)

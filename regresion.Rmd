@@ -1,0 +1,73 @@
+---
+always_allow_html: yes
+geometry: margin=1.5cm
+---
+# Reporte de regresión de `r x` sobre `r y` del `r fecha`
+
+## Gráfico de dispersión
+
+```{r, echo=FALSE}
+plot(as.double(datoscsv[[x]]), as.double(datoscsv[[y]]), xlab = x, ylab = y,
+           main = paste("Gráfico de dispersión de", x, " - ", y))
+grid(lty = 1, lwd = 1)
+
+```
+
+## Regresión de tipo '`r input$chTR`'
+
+### Fórmula
+
+```{r, echo=FALSE}
+if (input$chTR == "lineal"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(", x, "))")
+}else if (input$chTR == "cuadratico"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), x, ") + (", round(resRG$coefficients[3], 5), "(", x, "^2 ))")
+}else if (input$chTR == "cubico"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), x, ") + (", round(resRG$coefficients[3], 5), "(", x, "^2 ))", "+ (", round(resRG$coefficients[4], 5), "(", x, "^3 ))")
+}else if (input$chTR == "potencial"){
+  paste("Formula: log(", y,") = log(", round(resRG$coefficients[1], 5), ") + (", round(resRG$coefficients[2], 5), "log(", x, "))")
+}else if (input$chTR == "exponencial"){
+  paste("Formula: log(", y,") = log(", round(resRG$coefficients[1], 5), ") + (", round(resRG$coefficients[2], 5), "(", x, "))")
+}else if (input$chTR == "logaritmico"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "log(", x, "))")
+}else if (input$chTR == "inverso"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(1/", x, "))")
+}else if (input$chTR == "inversoCuad"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(1/", x, "^2 ))")
+}else if (input$chTR == "inversoCub"){
+  paste("Formula:", y,"=", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(1/", x, "^ 2))")
+}else if (input$chTR == "sigmoidal"){
+  paste("Formula: log(", y,") =", round(resRG$coefficients[1], 5), "+ (", round(resRG$coefficients[2], 5), "(1/", x, "))")
+}
+```
+
+### Gráfico del modelo
+
+```{r, echo=FALSE}
+plot(as.double(datoscsv[[x]]), as.double(datoscsv[[y]]), xlab = x, ylab = y,
+     main = paste("Gráfico de dispersión de", x, " - ", y))
+if (input$chTR == "lineal"){
+  curve(resRG$coefficients[1] + (resRG$coefficients[2]*x), col="blue", lwd=2, add = T)
+}else if (input$chTR == "cuadratico"){
+  curve(resRG$coefficients[1] + (resRG$coefficients[2]*x) + (resRG$coefficients[3]*(x^2)), col="blue", lwd=2, add = T)
+}else if (input$chTR == "cubico"){
+  curve(resRG$coefficients[1] + (resRG$coefficients[2]*x) + (resRG$coefficients[3]*(x^2)) + (resRG$coefficients[4]*(x^3)), col="blue", lwd=2, add = T)
+}else if (input$chTR == "potencial"){
+  curve(exp(resRG$coefficient[1]) * (x^(resRG$coefficient[2])), col="blue", lwd=2, add = T)
+}else if (input$chTR == "exponencial"){
+  curve(exp(resRG$coefficient[1]) * exp(resRG$coefficient[2] * x), col="blue", lwd=2, add = T)
+}else if (input$chTR == "logaritmico"){
+  curve(resRG$coefficient[1] + resRG$coefficient[2] * log(x), col="blue", lwd=2, add = T)
+}else if (input$chTR == "inverso"){
+  curve(resRG$coefficient[1] + (resRG$coefficient[2]/x), col="blue", lwd=2, add = T)
+}else if (input$chTR == "inversoCuad"){
+  curve(resRG$coefficient[1] + (resRG$coefficient[2]/(x^2)), col="blue", lwd=2, add = T)
+}else if (input$chTR == "inversoCub"){
+  curve(resRG$coefficient[1] + (resRG$coefficient[2]/x^3), col="blue", lwd=2, add = T)
+}else if (input$chTR == "sigmoidal"){
+  curve(exp(resRG$coefficient[1] + (resRG$coefficient[2]/x)), col="blue", lwd=2, add = T)
+}
+legend(x = "bottomright", legend = "Curva ajustada", col ="blue" , lwd = 2, bty = "n")
+grid(lty = 1, lwd = 1)
+```
+
